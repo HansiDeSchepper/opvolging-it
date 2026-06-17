@@ -176,7 +176,7 @@ function deviceForm(d, locs, persons) {
     <div class="form-group"><label>Naam *</label><input name="name" required value="${d.name||''}"></div>
     <div class="form-group"><label>Categorie *</label>
       <select name="category" required>
-        ${['Desktop','Laptop','Printer','Switch','Router','Server','Monitor','Tablet','Telefoon','Overig'].map(c => `<option ${d.category===c?'selected':''}>${c}</option>`).join('')}
+        ${['Desktop','Laptop','Printer','Switch','Router','Server','Monitor','Tablet','Telefoon','Access Point WIFI','Overig'].map(c => `<option ${d.category===c?'selected':''}>${c}</option>`).join('')}
       </select>
     </div>
     <div class="form-group"><label>Merk</label><input name="brand" value="${d.brand||''}"></div>
