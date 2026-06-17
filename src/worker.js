@@ -47,7 +47,7 @@ export default {
         params.push(s, s, s, s, s);
       }
       if (q.get('expiring_soon')) {
-        sql += " AND (d.warranty_until BETWEEN date('now') AND date('now','+30 days') OR d.license_expires BETWEEN date('now') AND date('now','+30 days'))";
+        sql += " AND d.warranty_until BETWEEN date('now') AND date('now','+30 days')";
       }
       sql += ' ORDER BY d.updated_at DESC';
       const { results } = await env.DB.prepare(sql).bind(...params).all();
@@ -108,6 +108,46 @@ export default {
 
       if (method === 'DELETE') {
         await env.DB.prepare('DELETE FROM devices WHERE id=?').bind(id).run();
+        return json({ ok: true });
+      }
+    }
+
+    // ─── DEVICE USER HISTORY ─────────────────────────────────────────────────
+
+    const histMatch = path.match(/^\/api\/devices\/(\d+)\/history$/);
+    if (histMatch) {
+      const id = histMatch[1];
+      if (method === 'GET') {
+        const { results } = await env.DB.prepare(`
+          SELECT h.*, p.name AS person_name
+          FROM device_user_history h
+          LEFT JOIN persons p ON h.person_id = p.id
+          WHERE h.device_id = ?
+          ORDER BY h.assigned_at DESC
+        `).bind(id).all();
+        return json(results);
+      }
+      if (method === 'POST') {
+        const b = await parseBody(request);
+        if (!b.assigned_at) return err('Datum is verplicht');
+        let personName = b.person_name_snapshot || null;
+        if (b.person_id && !personName) {
+          const p = await env.DB.prepare('SELECT name FROM persons WHERE id=?').bind(b.person_id).first();
+          if (p) personName = p.name;
+        }
+        const r = await env.DB.prepare(`
+          INSERT INTO device_user_history (device_id, person_id, person_name_snapshot, assigned_at, returned_at, notes)
+          VALUES (?,?,?,?,?,?)
+        `).bind(id, b.person_id||null, personName, b.assigned_at, b.returned_at||null, b.notes||null).run();
+        return json({ id: r.meta.last_row_id }, 201);
+      }
+    }
+
+    const histItemMatch = path.match(/^\/api\/history\/(\d+)$/);
+    if (histItemMatch) {
+      const id = histItemMatch[1];
+      if (method === 'DELETE') {
+        await env.DB.prepare('DELETE FROM device_user_history WHERE id=?').bind(id).run();
         return json({ ok: true });
       }
     }
@@ -179,7 +219,6 @@ export default {
         env.DB.prepare(`
           SELECT COUNT(*) as count FROM devices
           WHERE warranty_until BETWEEN date('now') AND date('now','+30 days')
-             OR license_expires BETWEEN date('now') AND date('now','+30 days')
         `).first(),
       ]);
       return json({ total: total.total, byStatus: byStatus.results, expiringSoon: expiring.count });

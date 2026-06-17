@@ -81,13 +81,12 @@ async function loadDashboard() {
   const el = document.getElementById('expiring-list');
   if (!expiring.length) { el.innerHTML = '<p class="empty">Geen verlopende garanties of licenties.</p>'; return; }
   el.innerHTML = `<table>
-    <thead><tr><th>Naam</th><th>Merk / Model</th><th>Locatie</th><th>Garantie t/m</th><th>Licentie t/m</th></tr></thead>
+    <thead><tr><th>Naam</th><th>Merk / Model</th><th>Locatie</th><th>Garantie t/m</th></tr></thead>
     <tbody>${expiring.map(d => `<tr class="row-warn">
       <td>${d.name}</td>
       <td>${[d.brand, d.model].filter(Boolean).join(' ') || '—'}</td>
       <td>${d.location_name || '—'}</td>
       <td>${expiryBadge(d.warranty_until)}</td>
-      <td>${expiryBadge(d.license_expires)}</td>
     </tr>`).join('')}</tbody>
   </table>`;
 }
@@ -112,7 +111,7 @@ function renderDevicesTable(data) {
   const el = document.getElementById('devices-table');
   if (!data.length) { el.innerHTML = '<p class="empty">Geen apparaten gevonden.</p>'; return; }
   el.innerHTML = `<table>
-    <thead><tr><th>Asset</th><th>Categorie</th><th>Merk / Model</th><th>Serienummer</th><th>Status</th><th>Locatie</th><th>Gebruiker</th><th>Garantie t/m</th><th>Acties</th></tr></thead>
+    <thead><tr><th>Asset</th><th>Categorie</th><th>Merk / Model</th><th>Serienummer</th><th>Status</th><th>Locatie</th><th>Gebruiker</th><th>Type</th><th>Garantie t/m</th><th>Acties</th></tr></thead>
     <tbody>${data.map(d => `<tr>
       <td><strong>${d.name}</strong>${d.asset_tag ? `<br><small style="color:#64748b">${d.asset_tag}</small>` : ''}</td>
       <td>${d.category}</td>
@@ -121,9 +120,11 @@ function renderDevicesTable(data) {
       <td>${statusBadge(d.status)}</td>
       <td>${d.location_name || '—'}</td>
       <td>${d.person_name || '—'}</td>
+      <td>${d.acquisition_type === 'geleased' ? `<span class="badge badge-reparatie">Lease</span>` : 'Aankoop'}</td>
       <td>${expiryBadge(d.warranty_until)}</td>
       <td><div class="actions">
         <button class="btn-icon" onclick="showQR(${d.id})" title="QR">&#9641;</button>
+        <button class="btn-icon" onclick="showHistory(${d.id},'${esc(d.name)}')">Historiek</button>
         <button class="btn-icon" onclick="editDevice(${d.id})">Bewerk</button>
         <button class="btn-danger" onclick="deleteDevice(${d.id})">&#128465;</button>
       </div></td>
@@ -210,8 +211,6 @@ function deviceForm(d, locs, persons) {
     <div class="form-group lease-field" style="${d.acquisition_type==='geleased'?'':'display:none'}"><label>Leasemaatschappij</label><input name="lease_provider" value="${d.lease_provider||''}"></div>
     <div class="form-group lease-field" style="${d.acquisition_type==='geleased'?'':'display:none'}"><label>Lease einde</label><input type="date" name="lease_end" value="${d.lease_end||''}"></div>
     <div class="form-group"><label>Garantie t/m</label><input type="date" name="warranty_until" value="${d.warranty_until||''}"></div>
-    <div class="form-group"><label>Licentiesleutel</label><input name="license_key" value="${d.license_key||''}"></div>
-    <div class="form-group"><label>Licentie t/m</label><input type="date" name="license_expires" value="${d.license_expires||''}"></div>
     <div class="form-group full"><label>Notities</label><textarea name="notes">${d.notes||''}</textarea></div>
     <div class="form-actions full">
       <button type="button" class="btn-secondary" onclick="closeModal()">Annuleren</button>
@@ -219,6 +218,78 @@ function deviceForm(d, locs, persons) {
     </div>
   </form>`;
 }
+
+// ─── HISTORY ─────────────────────────────────────────────────────────────────
+
+async function showHistory(deviceId, deviceName) {
+  const [history, persons] = await Promise.all([
+    get('/api/devices/' + deviceId + '/history'),
+    get('/api/persons'),
+  ]);
+  openModal(`Historiek: ${deviceName}`, historyHtml(deviceId, history, persons));
+}
+
+function historyHtml(deviceId, history, persons) {
+  const rows = history.length
+    ? history.map(h => `<tr>
+        <td>${h.person_name || h.person_name_snapshot || '—'}</td>
+        <td>${fmtDate(h.assigned_at)}</td>
+        <td>${h.returned_at ? fmtDate(h.returned_at) : '<span class="badge badge-actief">Huidig</span>'}</td>
+        <td>${h.notes || '—'}</td>
+        <td><button class="btn-danger" onclick="deleteHistory(${h.id},${deviceId},'${esc(h.person_name||h.person_name_snapshot||'')}')">&#128465;</button></td>
+      </tr>`).join('')
+    : `<tr><td colspan="5" class="empty">Nog geen historiek.</td></tr>`;
+
+  return `<div>
+    <table style="margin-bottom:20px">
+      <thead><tr><th>Gebruiker</th><th>Van</th><th>Tot</th><th>Notities</th><th></th></tr></thead>
+      <tbody>${rows}</tbody>
+    </table>
+    <div class="section-title">Invoer toevoegen</div>
+    <form id="hist-form" class="form-grid">
+      <div class="form-group"><label>Gebruiker</label>
+        <select name="person_id">
+          <option value="">— extern / onbekend —</option>
+          ${persons.map(p => `<option value="${p.id}">${p.name}</option>`).join('')}
+        </select>
+      </div>
+      <div class="form-group"><label>Of vrije naam</label><input name="person_name_snapshot" placeholder="bv. Jan Janssen (extern)"></div>
+      <div class="form-group"><label>Van *</label><input type="date" name="assigned_at" required></div>
+      <div class="form-group"><label>Tot</label><input type="date" name="returned_at"></div>
+      <div class="form-group full"><label>Notities</label><textarea name="notes"></textarea></div>
+      <div class="form-actions full">
+        <button type="submit" class="btn-primary">Toevoegen</button>
+      </div>
+    </form>
+  </div>`;
+}
+
+async function deleteHistory(histId, deviceId, name) {
+  if (!confirm(`Historiekregel voor "${name}" verwijderen?`)) return;
+  await del('/api/history/' + histId);
+  toast('Verwijderd');
+  const d = devicesData.find(x => x.id === deviceId);
+  showHistory(deviceId, d ? d.name : '');
+}
+
+document.getElementById('modal-body').addEventListener('submit', async e => {
+  if (e.target.id !== 'hist-form') return;
+  e.preventDefault();
+  const fd = new FormData(e.target);
+  const body = Object.fromEntries([...fd.entries()].map(([k, v]) => [k, v || null]));
+  if (body.person_id) body.person_id = +body.person_id;
+  const deviceId = parseInt(document.getElementById('modal-title').textContent.match(/\d+/) || [0]);
+  const titleEl = document.getElementById('modal-title').textContent;
+  try {
+    const match = titleEl.match(/Historiek: (.+)/);
+    const name = match ? match[1] : '';
+    const d = devicesData.find(x => x.name === name);
+    if (!d) { toast('Kon apparaat niet vinden', 'err'); return; }
+    await post('/api/devices/' + d.id + '/history', body);
+    toast('Toegevoegd');
+    showHistory(d.id, d.name);
+  } catch (err) { toast(err.message, 'err'); }
+});
 
 // ─── QR CODE ─────────────────────────────────────────────────────────────────
 
