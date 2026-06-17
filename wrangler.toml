@@ -6,7 +6,7 @@ compatibility_flags = ["nodejs_compat"]
 [[d1_databases]]
 binding = "DB"
 database_name = "opvolging-it-db"
-database_id = "VERVANG_MET_ECHTE_ID"
+database_id = "69cc73c7-bef8-40d3-aeae-3b4954f033be"
 
 [assets]
 directory = "./public"
