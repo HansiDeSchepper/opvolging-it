@@ -200,7 +200,15 @@ function deviceForm(d, locs, persons) {
         ${persons.map(p => `<option value="${p.id}" ${d.person_id===p.id?'selected':''}>${p.name}</option>`).join('')}
       </select>
     </div>
+    <div class="form-group"><label>Verwervingstype</label>
+      <select name="acquisition_type" onchange="toggleLeaseFields(this)">
+        <option value="aangekocht" ${(d.acquisition_type||'aangekocht')==='aangekocht'?'selected':''}>Aangekocht</option>
+        <option value="geleased" ${d.acquisition_type==='geleased'?'selected':''}>Geleased</option>
+      </select>
+    </div>
     <div class="form-group"><label>Aankoopdatum</label><input type="date" name="purchase_date" value="${d.purchase_date||''}"></div>
+    <div class="form-group lease-field" style="${d.acquisition_type==='geleased'?'':'display:none'}"><label>Leasemaatschappij</label><input name="lease_provider" value="${d.lease_provider||''}"></div>
+    <div class="form-group lease-field" style="${d.acquisition_type==='geleased'?'':'display:none'}"><label>Lease einde</label><input type="date" name="lease_end" value="${d.lease_end||''}"></div>
     <div class="form-group"><label>Garantie t/m</label><input type="date" name="warranty_until" value="${d.warranty_until||''}"></div>
     <div class="form-group"><label>Licentiesleutel</label><input name="license_key" value="${d.license_key||''}"></div>
     <div class="form-group"><label>Licentie t/m</label><input type="date" name="license_expires" value="${d.license_expires||''}"></div>
@@ -358,6 +366,11 @@ document.getElementById('modal-overlay').addEventListener('click', e => {
 document.getElementById('qr-overlay').addEventListener('click', e => {
   if (e.target === document.getElementById('qr-overlay')) document.getElementById('qr-overlay').classList.add('hidden');
 });
+
+function toggleLeaseFields(sel) {
+  const show = sel.value === 'geleased';
+  document.querySelectorAll('.lease-field').forEach(el => el.style.display = show ? '' : 'none');
+}
 
 function esc(s) { return String(s).replace(/'/g, "\\'"); }
 

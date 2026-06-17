@@ -59,13 +59,15 @@ export default {
       if (!b.name || !b.category) return err('Naam en categorie zijn verplicht');
       const stmt = env.DB.prepare(`
         INSERT INTO devices (name, category, brand, model, serial_number, asset_tag, status,
-          location_id, person_id, purchase_date, warranty_until, license_key, license_expires, notes)
-        VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+          location_id, person_id, purchase_date, warranty_until, license_key, license_expires, notes,
+          acquisition_type, lease_end, lease_provider)
+        VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
       `);
       const r = await stmt.bind(
         b.name, b.category, b.brand||null, b.model||null, b.serial_number||null, b.asset_tag||null,
         b.status||'actief', b.location_id||null, b.person_id||null, b.purchase_date||null,
-        b.warranty_until||null, b.license_key||null, b.license_expires||null, b.notes||null
+        b.warranty_until||null, b.license_key||null, b.license_expires||null, b.notes||null,
+        b.acquisition_type||'aangekocht', b.lease_end||null, b.lease_provider||null
       ).run();
       return json({ id: r.meta.last_row_id }, 201);
     }
@@ -92,12 +94,14 @@ export default {
         await env.DB.prepare(`
           UPDATE devices SET name=?, category=?, brand=?, model=?, serial_number=?, asset_tag=?,
             status=?, location_id=?, person_id=?, purchase_date=?, warranty_until=?,
-            license_key=?, license_expires=?, notes=?, updated_at=CURRENT_TIMESTAMP
+            license_key=?, license_expires=?, notes=?, acquisition_type=?, lease_end=?, lease_provider=?,
+            updated_at=CURRENT_TIMESTAMP
           WHERE id=?
         `).bind(
           b.name, b.category, b.brand||null, b.model||null, b.serial_number||null, b.asset_tag||null,
           b.status||'actief', b.location_id||null, b.person_id||null, b.purchase_date||null,
-          b.warranty_until||null, b.license_key||null, b.license_expires||null, b.notes||null, id
+          b.warranty_until||null, b.license_key||null, b.license_expires||null, b.notes||null,
+          b.acquisition_type||'aangekocht', b.lease_end||null, b.lease_provider||null, id
         ).run();
         return json({ ok: true });
       }
