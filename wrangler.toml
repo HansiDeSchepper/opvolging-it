@@ -1,0 +1,12 @@
+name = "opvolging-it"
+main = "src/worker.js"
+compatibility_date = "2024-09-23"
+compatibility_flags = ["nodejs_compat"]
+
+[[d1_databases]]
+binding = "DB"
+database_name = "opvolging-it-db"
+database_id = "VERVANG_MET_ECHTE_ID"
+
+[assets]
+directory = "./public"

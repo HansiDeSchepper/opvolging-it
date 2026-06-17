@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>IT Inventarisatie</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <nav class="sidebar">
+    <div class="sidebar-logo">
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
+      <span>IT Inventaris</span>
+    </div>
+    <ul class="nav-links">
+      <li><a href="#" class="nav-item active" data-page="dashboard">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+        Dashboard
+      </a></li>
+      <li><a href="#" class="nav-item" data-page="devices">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
+        Apparaten
+      </a></li>
+      <li><a href="#" class="nav-item" data-page="locations">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
+        Locaties
+      </a></li>
+      <li><a href="#" class="nav-item" data-page="persons">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>
+        Personen
+      </a></li>
+    </ul>
+  </nav>
+
+  <main class="content">
+    <!-- DASHBOARD -->
+    <section id="page-dashboard" class="page active">
+      <header class="page-header">
+        <h1>Dashboard</h1>
+      </header>
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-label">Totaal apparaten</div>
+          <div class="stat-value" id="stat-total">—</div>
+        </div>
+        <div class="stat-card stat-active">
+          <div class="stat-label">Actief</div>
+          <div class="stat-value" id="stat-active">—</div>
+        </div>
+        <div class="stat-card stat-warn">
+          <div class="stat-label">Verloopt binnenkort</div>
+          <div class="stat-value" id="stat-expiring">—</div>
+        </div>
+      </div>
+      <div class="section-title">Verlopende garanties / licenties (30 dagen)</div>
+      <div id="expiring-list" class="table-wrap">
+        <p class="empty">Laden…</p>
+      </div>
+    </section>
+
+    <!-- APPARATEN -->
+    <section id="page-devices" class="page">
+      <header class="page-header">
+        <h1>Apparaten</h1>
+        <button class="btn-primary" id="btn-add-device">+ Toevoegen</button>
+      </header>
+      <div class="filters">
+        <input type="search" id="search-devices" placeholder="Zoek op naam, merk, serienummer…" />
+        <select id="filter-category">
+          <option value="">Alle categorieën</option>
+          <option>Desktop</option>
+          <option>Laptop</option>
+          <option>Printer</option>
+          <option>Switch</option>
+          <option>Router</option>
+          <option>Server</option>
+          <option>Monitor</option>
+          <option>Tablet</option>
+          <option>Telefoon</option>
+          <option>Overig</option>
+        </select>
+        <select id="filter-status">
+          <option value="">Alle statussen</option>
+          <option value="actief">Actief</option>
+          <option value="in reparatie">In reparatie</option>
+          <option value="buiten gebruik">Buiten gebruik</option>
+          <option value="afgevoerd">Afgevoerd</option>
+        </select>
+      </div>
+      <div id="devices-table" class="table-wrap">
+        <p class="empty">Laden…</p>
+      </div>
+    </section>
+
+    <!-- LOCATIES -->
+    <section id="page-locations" class="page">
+      <header class="page-header">
+        <h1>Locaties</h1>
+        <button class="btn-primary" id="btn-add-location">+ Toevoegen</button>
+      </header>
+      <div id="locations-list" class="table-wrap"><p class="empty">Laden…</p></div>
+    </section>
+
+    <!-- PERSONEN -->
+    <section id="page-persons" class="page">
+      <header class="page-header">
+        <h1>Personen</h1>
+        <button class="btn-primary" id="btn-add-person">+ Toevoegen</button>
+      </header>
+      <div id="persons-list" class="table-wrap"><p class="empty">Laden…</p></div>
+    </section>
+  </main>
+
+  <!-- MODAL -->
+  <div id="modal-overlay" class="modal-overlay hidden">
+    <div class="modal">
+      <header class="modal-header">
+        <h2 id="modal-title">Apparaat</h2>
+        <button class="modal-close" id="modal-close">&times;</button>
+      </header>
+      <div id="modal-body" class="modal-body"></div>
+    </div>
+  </div>
+
+  <!-- QR MODAL -->
+  <div id="qr-overlay" class="modal-overlay hidden">
+    <div class="modal modal-sm">
+      <header class="modal-header">
+        <h2>QR-code</h2>
+        <button class="modal-close" id="qr-close">&times;</button>
+      </header>
+      <div class="modal-body qr-body">
+        <div id="qr-canvas"></div>
+        <p id="qr-label"></p>
+        <button class="btn-primary" onclick="window.print()">Afdrukken</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
