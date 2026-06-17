@@ -30,7 +30,7 @@ function daysUntil(d) {
 }
 
 function statusBadge(s) {
-  const map = { actief: 'actief', 'in reparatie': 'reparatie', 'buiten gebruik': 'buiten', afgevoerd: 'afgevoerd' };
+  const map = { actief: 'actief', vrij: 'actief', 'in reparatie': 'reparatie', 'buiten gebruik': 'buiten', afgevoerd: 'afgevoerd', onbekend: 'afgevoerd' };
   return `<span class="badge badge-${map[s] || 'afgevoerd'}">${s}</span>`;
 }
 
@@ -186,7 +186,7 @@ function deviceForm(d, locs, persons) {
     <div class="form-group"><label>Asset tag</label><input name="asset_tag" value="${d.asset_tag||''}"></div>
     <div class="form-group"><label>Status</label>
       <select name="status">
-        ${['actief','in reparatie','buiten gebruik','afgevoerd'].map(s => `<option ${d.status===s?'selected':''}>${s}</option>`).join('')}
+        ${['actief','vrij','in reparatie','buiten gebruik','afgevoerd','onbekend'].map(s => `<option ${d.status===s?'selected':''}>${s}</option>`).join('')}
       </select>
     </div>
     <div class="form-group"><label>Locatie</label>
